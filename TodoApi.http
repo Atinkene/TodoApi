@@ -19,22 +19,21 @@ GET {{TodoApi_HostAddress}}/api/todoitems
 
 ###
 
-@id=1
+@id=69b62ccf3152d9626f2afc77
 GET {{TodoApi_HostAddress}}/api/todoitems/{{id}}
 
 ###
 
-PUT {{TodoApi_HostAddress}}/api/todoitems/1
+PUT {{TodoApi_HostAddress}}/api/todoitems/69b62ccf3152d9626f2afc77
 Content-Type: application/json
 
 {
-  "id": 1,
   "name": "feed fish",
   "isComplete": false
 }
 
 ###
 
-DELETE {{TodoApi_HostAddress}}/api/todoitems/1
+DELETE {{TodoApi_HostAddress}}/api/todoitems/69b62ccf3152d9626f2afc77
 
 ###
