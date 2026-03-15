@@ -22,6 +22,6 @@ RUN apt-get update && \
 COPY --from=build /app/out .
 
 EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 
 ENTRYPOINT ["dotnet", "TodoApi.dll"]
