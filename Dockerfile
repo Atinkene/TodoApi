@@ -1,5 +1,5 @@
 ﻿# Étape 1 — Build
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-jammy AS build
 WORKDIR /app
 
 COPY *.csproj ./
@@ -8,18 +8,13 @@ RUN dotnet restore
 COPY . ./
 RUN dotnet publish -c Release -o out
 
-# Étape 2 — Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+# Étape 2 — Runtime Ubuntu 22.04 (OpenSSL 1.1.x)
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-jammy AS runtime
 WORKDIR /app
 
-# Créer une config OpenSSL permissive
-RUN apt-get update && apt-get install -y ca-certificates openssl && \
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
     update-ca-certificates
-
-RUN echo "[system_default_sect]\nMinProtocol = TLSv1\nCipherString = DEFAULT@SECLEVEL=0" \
-    > /etc/ssl/openssl_mongo.cnf
-
-ENV OPENSSL_CONF=/etc/ssl/openssl_mongo.cnf
 
 COPY --from=build /app/out .
 
