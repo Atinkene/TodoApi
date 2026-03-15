@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TodoApi.Models;
 using TodoApi.Services;
 
@@ -6,6 +7,7 @@ namespace TodoApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // ← tous les endpoints nécessitent une authentification
 public class TodoItemsController : ControllerBase
 {
     private readonly TodoItemsService _todoItemsService;
@@ -13,6 +15,7 @@ public class TodoItemsController : ControllerBase
     public TodoItemsController(TodoItemsService todoItemsService) =>
         _todoItemsService = todoItemsService;
 
+    // GET api/todoitems — tous les utilisateurs authentifiés
     [HttpGet]
     public async Task<ActionResult<List<TodoItemDTO>>> GetAll()
     {
@@ -20,6 +23,7 @@ public class TodoItemsController : ControllerBase
         return items.Select(item => ItemToDTO(item)).ToList();
     }
 
+    // GET api/todoitems/{id} — tous les utilisateurs authentifiés
     [HttpGet("{id:length(24)}")]
     public async Task<ActionResult<TodoItemDTO>> GetById(string id)
     {
@@ -28,7 +32,9 @@ public class TodoItemsController : ControllerBase
         return ItemToDTO(item);
     }
 
+    // POST api/todoitems — admin uniquement
     [HttpPost]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Create(TodoItemDTO itemDTO)
     {
         var item = new TodoItem
@@ -41,7 +47,9 @@ public class TodoItemsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = item.Id }, ItemToDTO(item));
     }
 
+    // PUT api/todoitems/{id} — admin uniquement
     [HttpPut("{id:length(24)}")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(string id, TodoItemDTO itemDTO)
     {
         var item = await _todoItemsService.GetAsync(id);
@@ -54,7 +62,9 @@ public class TodoItemsController : ControllerBase
         return NoContent();
     }
 
+    // DELETE api/todoitems/{id} — admin uniquement
     [HttpDelete("{id:length(24)}")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(string id)
     {
         var item = await _todoItemsService.GetAsync(id);
