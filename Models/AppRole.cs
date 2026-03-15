@@ -3,7 +3,7 @@ using MongoDbGenericRepository.Attributes;
 
 namespace TodoApi.Models;
 
-[CollectionName("Users")]
-public class AppUser : MongoIdentityUser<Guid>
+[CollectionName("Roles")]
+public class AppRole : MongoIdentityRole<Guid>
 {
 }

@@ -21,7 +21,6 @@ public class AuthController : ControllerBase
         _config = config;
     }
 
-    
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
     {
@@ -35,7 +34,6 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Compte créé avec succès." });
     }
 
-    
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDTO dto)
     {
@@ -52,15 +50,15 @@ public class AuthController : ControllerBase
     private string GenerateJwtToken(AppUser user, IList<string> roles)
     {
         var jwtSettings = _config.GetSection("Jwt");
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
 
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email!),
         };
 
-        
         foreach (var role in roles)
             claims.Add(new Claim(ClaimTypes.Role, role));
 

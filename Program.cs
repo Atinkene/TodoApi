@@ -1,10 +1,9 @@
+using AspNetCore.Identity.MongoDbCore.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Text;
-using TodoApi.Data;
 using TodoApi.Models;
 using TodoApi.Services;
 
@@ -13,23 +12,24 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// MongoDB
+// MongoDB pour TodoItems
 builder.Services.Configure<TodoDatabaseSettings>(
     builder.Configuration.GetSection("BookStoreDatabase"));
 builder.Services.AddSingleton<TodoItemsService>();
 
-// Identity avec EF Core InMemory
-builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseInMemoryDatabase("AuthDb"));
+// MongoDB pour Identity
+var mongoSettings = builder.Configuration.GetSection("BookStoreDatabase");
+var connectionString = mongoSettings["ConnectionString"]!;
+var databaseName = mongoSettings["DatabaseName"]!;
 
-builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
+builder.Services.AddIdentity<AppUser, AppRole>(options =>
 {
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 6;
     options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
 })
-.AddEntityFrameworkStores<AppDbContext>()
+.AddMongoDbStores<AppUser, AppRole, Guid>(connectionString, databaseName)
 .AddDefaultTokenProviders();
 
 // JWT
@@ -59,19 +59,18 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// Seed des rôles et admin par défaut
 using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
 
-    
     foreach (var role in new[] { "admin", "user" })
     {
         if (!await roleManager.RoleExistsAsync(role))
-            await roleManager.CreateAsync(new IdentityRole(role));
+            await roleManager.CreateAsync(new AppRole { Name = role });
     }
 
-    
     var adminEmail = "admin@todoapi.com";
     if (await userManager.FindByEmailAsync(adminEmail) is null)
     {
@@ -81,12 +80,11 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-
 app.MapOpenApi();
 app.MapScalarApiReference();
 
 app.UseHttpsRedirection();
-app.UseAuthentication(); 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
