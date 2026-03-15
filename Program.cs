@@ -21,13 +21,10 @@ builder.Services.AddSingleton<TodoItemsService>();
 var mongoConnectionString = builder.Configuration["BookStoreDatabase:ConnectionString"]!;
 var mongoDatabaseName = builder.Configuration["BookStoreDatabase:DatabaseName"]!;
 
-var mongoClientSettings = MongoClientSettings.FromConnectionString(mongoConnectionString);
-mongoClientSettings.SslSettings = new SslSettings
-{
-    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12
-                        | System.Security.Authentication.SslProtocols.Tls13
-};
-mongoClientSettings.AllowInsecureTls = true;
+// Ajouter tlsInsecure directement dans la connection string
+var mongoConnectionStringWithTls = mongoConnectionString.Contains("?")
+    ? mongoConnectionString + "&tlsInsecure=true&tls=true"
+    : mongoConnectionString + "?tlsInsecure=true&tls=true";
 
 builder.Services.AddIdentity<AppUser, AppRole>(options =>
 {
@@ -36,8 +33,7 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
     options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
 })
-.AddMongoDbStores<AppUser, AppRole, Guid>(
-    mongoClientSettings.ToString(), mongoDatabaseName)
+.AddMongoDbStores<AppUser, AppRole, Guid>(mongoConnectionStringWithTls, mongoDatabaseName)
 .AddDefaultTokenProviders();
 
 // JWT
