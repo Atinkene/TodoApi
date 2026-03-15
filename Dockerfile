@@ -12,10 +12,12 @@ RUN dotnet publish -c Release -o out
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
-# Installer les certificats CA manquants
+# Fix OpenSSL 3.x pour compatibilité MongoDB Atlas
 RUN apt-get update && \
-    apt-get install -y ca-certificates && \
-    update-ca-certificates
+    apt-get install -y ca-certificates openssl && \
+    update-ca-certificates && \
+    sed -i 's/MinProtocol = TLSv1.2/MinProtocol = TLSv1/' /etc/ssl/openssl.cnf && \
+    sed -i 's/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/' /etc/ssl/openssl.cnf
 
 COPY --from=build /app/out .
 
