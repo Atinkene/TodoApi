@@ -95,7 +95,13 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.MapOpenApi();
-app.MapScalarApiReference();
+app.MapScalarApiReference(options =>
+{
+    options.Servers = new List<ScalarServer>
+    {
+        new ScalarServer("https://todoapi-6bin.onrender.com")
+    };
+});
 
 //app.UseHttpsRedirection();
 app.UseCors();
