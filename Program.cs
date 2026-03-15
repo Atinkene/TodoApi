@@ -1,7 +1,7 @@
-using AspNetCore.Identity.MongoDbCore.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
 using Scalar.AspNetCore;
 using System.Text;
 using TodoApi.Models;
@@ -18,9 +18,16 @@ builder.Services.Configure<TodoDatabaseSettings>(
 builder.Services.AddSingleton<TodoItemsService>();
 
 // MongoDB pour Identity
-var mongoSettings = builder.Configuration.GetSection("BookStoreDatabase");
-var connectionString = mongoSettings["ConnectionString"]!;
-var databaseName = mongoSettings["DatabaseName"]!;
+var mongoConnectionString = builder.Configuration["BookStoreDatabase:ConnectionString"]!;
+var mongoDatabaseName = builder.Configuration["BookStoreDatabase:DatabaseName"]!;
+
+var mongoClientSettings = MongoClientSettings.FromConnectionString(mongoConnectionString);
+mongoClientSettings.SslSettings = new SslSettings
+{
+    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12
+                        | System.Security.Authentication.SslProtocols.Tls13
+};
+mongoClientSettings.AllowInsecureTls = true;
 
 builder.Services.AddIdentity<AppUser, AppRole>(options =>
 {
@@ -29,7 +36,8 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
     options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
 })
-.AddMongoDbStores<AppUser, AppRole, Guid>(connectionString, databaseName)
+.AddMongoDbStores<AppUser, AppRole, Guid>(
+    mongoClientSettings.ToString(), mongoDatabaseName)
 .AddDefaultTokenProviders();
 
 // JWT
